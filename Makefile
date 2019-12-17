@@ -1,8 +1,8 @@
-options=-Wall -pedantic -std=c11 
+options=-Wall -pedantic -std=c11 -lpthread
 
 .PHONY : clean 
 
-default : tp1
+default : tp1 valider 
 
 tp1 : tp1.o
 	gcc -o $@ $< $(options)
@@ -10,8 +10,16 @@ tp1 : tp1.o
 tp1.o : tp1.c 
 	gcc -c -o $@ $< $(options)
 
+valider : valider.o
+	gcc -o $@ $< $(options)
+
+valider.o : valider.c
+	gcc -c -o $@ $< $(options)
+
 clean : 
-	rm -fr *.o 
+	rm -fr *.o
+	rm -fr tp1 
+	rm -fr valider
 
 push :
 	git add .
