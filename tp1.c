@@ -91,12 +91,18 @@ void ecrire_ligne(Philosophe* p){
 
 	pthread_mutex_lock(&mutex);
 	code++;
-	system("@cls||clear");
+
+	#ifdef _WIN32
+	system("@cls");
+	#else
+	system("clear");
+	#endif
+
 	printf("Le dîner des philosophes se déroule ... %d%%\n",code * 2);
 	if(p->action == PENSER){
-		fprintf(p->fp, "%d 		Philosophe %d 	pense\n", code, p->numero);
+		fprintf(p->fp, "%d 	Philosophe %d 	pense\n", code, p->numero);
 	} else {
-		fprintf(p->fp, "%d 		Philosophe %d 	mange\n", code, p->numero);
+		fprintf(p->fp, "%d 	Philosophe %d 	mange\n", code, p->numero);
 	}
 	pthread_cond_signal (&condition_var);
 	pthread_mutex_unlock(&mutex);
@@ -181,6 +187,7 @@ void modifier_action(){
 **/
 void quitter(FILE* fp){ 
 	consulter_resultat(fp);
+	fclose(fp);
 	exit (0); 
 }
 
@@ -195,10 +202,11 @@ int afficher_menu(FILE * fp){
 		printf("[ 3 ] Supprimer le nom d'un philosophe\n");
 		printf("[ 4 ] Modifier le nom et l'action d'un philosophe\n");
 		printf("[ 5 ] Quitter");
+
 		char line[256];
 		fgets(line, sizeof(line), stdin);
-    	
-		switch (sscanf(line, "%d", &choix)){
+    	sscanf(line, "%d", &choix);
+		switch (choix){
 			case 1 : 
 				consulter_resultat(fp);
 				break;
@@ -260,7 +268,5 @@ int main(){
     }
 
     afficher_menu(fp);
-    fclose(fp);
-
 
 }
