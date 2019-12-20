@@ -1,6 +1,6 @@
 options=-Wall -pedantic -std=c11 -lpthread
 
-.PHONY : clean 
+.PHONY : clean push
 
 default : tp1 valider 
 
@@ -22,6 +22,7 @@ clean :
 	rm -fr valider
 
 push :
+	make clean
 	git add .
 	git commit -m 'automated commit'
 	git push origin master
