@@ -5,3 +5,4 @@ resultat.txt
 .idea/*
 CMakeLists.txt
 cmake-build-debug/*
+push.sh

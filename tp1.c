@@ -205,7 +205,7 @@ int main() {
     }
 
     // L'en-tête du fichier
-    fprintf(fp, "Code 	Nom 	 		Action\n");
+    fprintf(fp, "Code 	Nom 	 	Action\n");
 
     pthread_t threads[QTE_PHILOSOPHES];
     Philosophe *philosophes[QTE_PHILOSOPHES];
@@ -239,7 +239,7 @@ int main() {
         printf("[ 2 ] Modifier le nom d'un philosophe\n");
         printf("[ 3 ] Supprimer le nom d'un philosophe\n");
         printf("[ 4 ] Modifier le nom et l'action d'un philosophe\n");
-        printf("[ 5 ] Quitter");
+        printf("[ 5 ] Quitter\n");
 
         char line[256];
         fgets(line, sizeof(line), stdin);
