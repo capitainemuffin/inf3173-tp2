@@ -2,3 +2,6 @@
 tp1
 valider
 resultat.txt
+.idea/*
+CMakeLists.txt
+cmake-build-debug/*

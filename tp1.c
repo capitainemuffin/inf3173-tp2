@@ -6,7 +6,9 @@
 #ifdef _WIN32
 #include <Windows.h>
 #else
+
 #include <unistd.h>
+
 #endif
 
 #define QTE_BAGUETTES_REQUISES_MANGER 2
@@ -34,111 +36,111 @@ int code = 0;
 * Représente les actions que peut faire un philosophe
 **/
 typedef enum {
-	PENSER, MANGER
+    PENSER, MANGER
 } Action;
 
 /**
 * Représente un philosophe 
 **/
 typedef struct {
-	int numero;
-	Action action;
-	FILE* fp;
+    int numero;
+    Action action;
+    FILE *fp;
 } Philosophe;
 
 /**
 * Le constructeur d'un philosophe 
 * Renvoi un pointeur vers une structure <Philosophe>
 **/
-Philosophe* initPhilosophe(int i, FILE* fp){
-	Philosophe* p = malloc(sizeof(Philosophe));
-	p->action = PENSER;
-	p->numero = i;
-	p->fp = fp;
-	return p;
+Philosophe *initPhilosophe(int i, FILE *fp) {
+    Philosophe *p = malloc(sizeof(Philosophe));
+    p->action = PENSER;
+    p->numero = i;
+    p->fp = fp;
+    return p;
 }
 
 /**
 * Destructeur d'un philosophe
 * Libère la mémoire allouée à la structure <Philosophe> p
 **/
-void freePhilosophe(Philosophe* p){
-	free(p);
+void freePhilosophe(Philosophe *p) {
+    free(p);
 }
 
-void pickup_forks(){
-	pthread_mutex_lock(&mutex);
-	while(nbr_baguettes_disponibles < QTE_BAGUETTES_REQUISES_MANGER){
-		pthread_cond_wait(&condition_var, &mutex);
-	}
-	pthread_cond_signal (&condition_var);
-	pthread_mutex_unlock(&mutex);
+void pickup_forks() {
+    pthread_mutex_lock(&mutex);
+    while (nbr_baguettes_disponibles < QTE_BAGUETTES_REQUISES_MANGER) {
+        pthread_cond_wait(&condition_var, &mutex);
+    }
+    pthread_cond_signal(&condition_var);
+    pthread_mutex_unlock(&mutex);
 
-	pthread_mutex_lock(&mutex);
-	nbr_baguettes_disponibles -= QTE_BAGUETTES_REQUISES_MANGER;
-	pthread_cond_signal (&condition_var);
-	pthread_mutex_unlock(&mutex);
+    pthread_mutex_lock(&mutex);
+    nbr_baguettes_disponibles -= QTE_BAGUETTES_REQUISES_MANGER;
+    pthread_cond_signal(&condition_var);
+    pthread_mutex_unlock(&mutex);
 }
 
-void return_forks(){
-	pthread_mutex_lock(&mutex);
-	nbr_baguettes_disponibles += QTE_BAGUETTES_REQUISES_MANGER;
-	pthread_cond_signal (&condition_var);
-	pthread_mutex_unlock(&mutex);
+void return_forks() {
+    pthread_mutex_lock(&mutex);
+    nbr_baguettes_disponibles += QTE_BAGUETTES_REQUISES_MANGER;
+    pthread_cond_signal(&condition_var);
+    pthread_mutex_unlock(&mutex);
 }
 
-void ecrire_ligne(Philosophe* p){
+void ecrire_ligne(Philosophe *p) {
 
-	pthread_mutex_lock(&mutex);
-	code++;
+    pthread_mutex_lock(&mutex);
+    code++;
 
-	#ifdef _WIN32
-	system("@cls");
-	#else
-	system("clear");
-	#endif
+#ifdef _WIN32
+    system("@cls");
+#else
+    system("clear");
+#endif
 
-	printf("Le dîner des philosophes se déroule ... %d%%\n",code * 2);
-	if(p->action == PENSER){
-		fprintf(p->fp, "%d 	Philosophe %d 	pense\n", code, p->numero);
-	} else {
-		fprintf(p->fp, "%d 	Philosophe %d 	mange\n", code, p->numero);
-	}
-	pthread_cond_signal (&condition_var);
-	pthread_mutex_unlock(&mutex);
+    printf("Le dîner des philosophes se déroule ... %d%%\n", code * 2);
+    if (p->action == PENSER) {
+        fprintf(p->fp, "%d 	Philosophe %d 	pense\n", code, p->numero);
+    } else {
+        fprintf(p->fp, "%d 	Philosophe %d 	mange\n", code, p->numero);
+    }
+    pthread_cond_signal(&condition_var);
+    pthread_mutex_unlock(&mutex);
 }
 
-void* faire_une_action(void* philo){
+void *faire_une_action(void *philo) {
 
-	Philosophe* p = philo;
-	int qte_penser = 0;
-	int qte_manger = 0;
+    Philosophe *p = philo;
+    int qte_penser = 0;
+    int qte_manger = 0;
 
-	while(qte_penser < QTE_PENSER_MAX || qte_manger < QTE_MANGER_MAX){
+    while (qte_penser < QTE_PENSER_MAX || qte_manger < QTE_MANGER_MAX) {
 
-		if(p->action == MANGER){
-			return_forks();
-			p->action = PENSER;
-			qte_penser++;
-		} else {
-			pickup_forks();
-			p->action = MANGER;
-			qte_manger++;
-		}
+        if (p->action == MANGER) {
+            return_forks();
+            p->action = PENSER;
+            qte_penser++;
+        } else {
+            pickup_forks();
+            p->action = MANGER;
+            qte_manger++;
+        }
 
-		ecrire_ligne(p);
+        ecrire_ligne(p);
 
-		// Temps pris pour faire l'action
-		int temps = (rand() % (TEMPS_MAX + 1 - TEMPS_MIN)) + TEMPS_MIN;
-  		#ifdef _WIN32
-  		Sleep(temps * 1000);
-  		#else
-  		sleep(temps);
-  		#endif
+        // Temps pris pour faire l'action
+        int temps = (rand() % (TEMPS_MAX + 1 - TEMPS_MIN)) + TEMPS_MIN;
+#ifdef _WIN32
+        Sleep(temps * 1000);
+#else
+        sleep(temps);
+#endif
 
-	}
+    }
 
-	pthread_exit(NULL);
+    pthread_exit(NULL);
 
 }
 
@@ -146,22 +148,22 @@ void* faire_une_action(void* philo){
 * Affiche les résultats.
 * Aucun verrouillage n’est fait.
 **/
-void consulter_resultat(FILE* fp){
-	rewind(fp);
-	char c;
-	c = fgetc(fp);
+void consulter_resultat(FILE *fp) {
+    rewind(fp);
+    char c;
+    c = fgetc(fp);
 
-	while (c != EOF){
-		printf("%c", c);
-		c = fgetc(fp);
-	}
+    while (c != EOF) {
+        printf("%c", c);
+        c = fgetc(fp);
+    }
 }
 
 /**
 * Demande le code de philosophe dont on veut modifier son nom.
 * Verouille le champ "nom" qui est associé à ce code.
 **/
-void modifier_nom(){
+void modifier_nom() {
 
 }
 
@@ -169,7 +171,7 @@ void modifier_nom(){
 * Supprimer le nom d’un philosophe. 
 * Verrouille le fichier en entier.
 **/
-void supprimer_nom(){
+void supprimer_nom() {
 
 }
 
@@ -177,7 +179,7 @@ void supprimer_nom(){
 * Demande le code du philosophe dont on veut modifier l'action.
 * Verouille l’enregistrement (la ligne) qui est associée à ce code.
 **/
-void modifier_action(){
+void modifier_action() {
 
 }
 
@@ -185,88 +187,83 @@ void modifier_action(){
 * Le programme se ferme en affichant le contenu de
 * fichier « résultat ». 
 **/
-void quitter(FILE* fp){ 
-	consulter_resultat(fp);
-	fclose(fp);
-	exit (0); 
+void quitter(FILE *fp) {
+    consulter_resultat(fp);
+    fclose(fp);
+    exit(0);
 }
 
-int afficher_menu(FILE * fp){
-	int choix = -1;
+int main() {
 
-	while(1) {
+    // Créer le fichier
+    FILE *fp = fopen("resultat.txt", "w+");
+    int choix = -1;
 
-		printf("Choisissez l'une des options suivantes et appuyez sur entrée.\n");
-		printf("[ 1 ] Consulter le résultat\n");
-		printf("[ 2 ] Modifier le nom d'un philosophe\n");
-		printf("[ 3 ] Supprimer le nom d'un philosophe\n");
-		printf("[ 4 ] Modifier le nom et l'action d'un philosophe\n");
-		printf("[ 5 ] Quitter");
+    if (fp == NULL) {
+        perror("Error opening th file");
+        exit(-3);
+    }
 
-		char line[256];
-		fgets(line, sizeof(line), stdin);
-    	sscanf(line, "%d", &choix);
-		switch (choix){
-			case 1 : 
-				consulter_resultat(fp);
-				break;
-			case 2 : 
-				modifier_nom();
-				break;
-			case 3 :
-				supprimer_nom();
-				break;
-			case 4 :
-				modifier_nom();
-				modifier_action();
-				break;
-			case 5 :
-				quitter(fp);
-				break;
-			default : 
-				printf("Choix invalide ! \n");
-		}
+    // L'en-tête du fichier
+    fprintf(fp, "Code 	Nom 	 		Action\n");
 
-	}
+    pthread_t threads[QTE_PHILOSOPHES];
+    Philosophe *philosophes[QTE_PHILOSOPHES];
 
-	return choix;
-}
+    for (int i = 0; i < QTE_PHILOSOPHES; i++) {
 
+        Philosophe *p = initPhilosophe(i + 1, fp);
+        philosophes[i] = p;
 
-int main(){
+        if (pthread_create(&threads[i], NULL, &faire_une_action,
+                           philosophes[i]) != 0) {
+            perror("Une erreur est survenue à l'ouverture de thread.");
+            exit(-1);
+        }
+    }
 
-	FILE* fp = fopen("resultat.txt", "w+");
-
-	if (fp == NULL){
-		perror("Error opening th file");
-		exit(-3);
-	}
-
-	fprintf(fp, "Code 	Nom 	 		Action\n");
-	pthread_t threads [QTE_PHILOSOPHES];
-	Philosophe* philosophes [QTE_PHILOSOPHES];
-
-	for(int i = 0 ; i < QTE_PHILOSOPHES ; i++){
-
-		Philosophe* p = initPhilosophe(i + 1, fp);
-		philosophes[i] = p;
-
-		if(pthread_create(&threads[i], NULL, &faire_une_action, philosophes[i]) != 0){
-			perror("Une erreur est survenue à l'ouverture de thread.");
-			exit(-1);
-		}
-	}
-
-	for (int i = 0; i < QTE_PHILOSOPHES; i++) {
+    for (int i = 0; i < QTE_PHILOSOPHES; i++) {
 
         if (pthread_join(threads[i], NULL) != 0) {
-			perror("Une erreur est survenue à l'attente de terminaison du thread.");
+            perror("Une erreur est survenue à l'attente de terminaison du thread.");
             exit(-2);
         }
 
         freePhilosophe(philosophes[i]);
     }
 
-    afficher_menu(fp);
+    while (1) {
 
+        printf("Choisissez l'une des options suivantes et appuyez sur entrée.\n");
+        printf("[ 1 ] Consulter le résultat\n");
+        printf("[ 2 ] Modifier le nom d'un philosophe\n");
+        printf("[ 3 ] Supprimer le nom d'un philosophe\n");
+        printf("[ 4 ] Modifier le nom et l'action d'un philosophe\n");
+        printf("[ 5 ] Quitter");
+
+        char line[256];
+        fgets(line, sizeof(line), stdin);
+        sscanf(line, "%d", &choix);
+        switch (choix) {
+            case 1 :
+                consulter_resultat(fp);
+                break;
+            case 2 :
+                modifier_nom();
+                break;
+            case 3 :
+                supprimer_nom();
+                break;
+            case 4 :
+                modifier_nom();
+                modifier_action();
+                break;
+            case 5 :
+                quitter(fp);
+                break;
+            default :
+                printf("Choix invalide ! \n");
+        }
+
+    }
 }
