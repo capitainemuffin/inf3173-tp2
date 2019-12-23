@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -157,21 +158,35 @@ void consulter_resultat(FILE *fp) {
         printf("%c", c);
         c = fgetc(fp);
     }
+    printf("\n");
 }
 
 /**
 * Demande le code de philosophe dont on veut modifier son nom.
 * Verouille le champ "nom" qui est associé à ce code.
 **/
-void modifier_nom() {
+void modifier_nom(FILE* fp) {
 
+    int fd = fileno(fp);
+
+    // acquire exclusive lock for bytes in range [10; 15)
+    // F_LOCK specifies blocking mode
+    if (lockf(fd, F_LOCK, 5) == -1) {
+        exit(1);
+    }
+
+    // release lock for bytes in range [10; 15)
+    if (lockf(fd, F_ULOCK, 5) == -1) {
+        exit(1);
+    }
 }
 
 /**
 * Supprimer le nom d’un philosophe. 
 * Verrouille le fichier en entier.
 **/
-void supprimer_nom() {
+void supprimer_nom(FILE* fp) {
+    int fd = fileno(fp);
 
 }
 
@@ -179,18 +194,9 @@ void supprimer_nom() {
 * Demande le code du philosophe dont on veut modifier l'action.
 * Verouille l’enregistrement (la ligne) qui est associée à ce code.
 **/
-void modifier_action() {
+void modifier_nom_et_action(FILE* fp) {
+    int fd = fileno(fp);
 
-}
-
-/**
-* Le programme se ferme en affichant le contenu de
-* fichier « résultat ». 
-**/
-void quitter(FILE *fp) {
-    consulter_resultat(fp);
-    fclose(fp);
-    exit(0);
 }
 
 int main() {
@@ -244,25 +250,27 @@ int main() {
         char line[256];
         fgets(line, sizeof(line), stdin);
         sscanf(line, "%d", &choix);
+
         switch (choix) {
             case 1 :
                 consulter_resultat(fp);
                 break;
             case 2 :
-                modifier_nom();
+                modifier_nom(fp);
                 break;
             case 3 :
-                supprimer_nom();
+                supprimer_nom(fp);
                 break;
             case 4 :
-                modifier_nom();
-                modifier_action();
+                modifier_nom(fp);
+                modifier_nom_et_action(fp);
                 break;
             case 5 :
-                quitter(fp);
-                break;
+                consulter_resultat(fp);
+                fclose(fp);
+                exit(0);
             default :
-                printf("Choix invalide ! \n");
+                printf("Choix invalide !\n");
         }
 
     }
