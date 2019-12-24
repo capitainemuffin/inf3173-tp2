@@ -81,8 +81,9 @@ void modifier_nom(FILE *fp) {
     strtok(line, "\n");
 
     if (taille < strlen(line)) {
-        printf("Désolé, la taille maximale (%d) pour le nom est dépassée (%lu).\n",
-               taille, strlen(line));
+        printf("Désolé, la taille maximale (%d) pour le nom est dépassée (%lu).\n", taille, strlen(line));
+        return;
+
     } else {
         fwrite(line, taille, 1, fp);
         printf("Nom modifié avec succès.\n");
