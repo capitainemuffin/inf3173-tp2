@@ -272,9 +272,11 @@ void supprimer_nom(FILE* fp) {
     while((c = fgetc(fp)) != EOF && ligne != choix) if(c == '\n') ligne++;
 
     while(c != EOF && c != '\n'){
-        if(c != '\t') fputc(' ', fp);
+        if(c != '\t'){
+            fputc(' ', fp);
+            fseek(fp,-1,SEEK_CUR);
+        }
         c = fgetc(fp);
-        fseek(fp,-1,SEEK_CUR);
     }
 
     printf("Nom supprimé avec succès.\n");
