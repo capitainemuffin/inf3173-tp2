@@ -1,4 +1,5 @@
 #define _XOPEN_SOURCE 700
+
 #include <stdio.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -244,8 +245,6 @@ void supprimer_nom(FILE* fp) {
     int choix = 0;
     char line[256];
     char c;
-    int idx_fin_ligne = 0;
-    int idx_debut_ligne = 0;
 
     //bloquer le fichier
     fseek(fp,0, SEEK_END);
@@ -270,20 +269,9 @@ void supprimer_nom(FILE* fp) {
     rewind(fp);
 
     // Arriver au début de la bonne ligne
-    while((c = fgetc(fp)) != EOF && ligne != choix){
-        if(c == '\n') ligne++;
-        idx_fin_ligne++;
-        idx_debut_ligne++;
-    }
+    while((c = fgetc(fp)) != EOF && ligne != choix) if(c == '\n') ligne++;
+    while((c = fgetc(fp)) != EOF && c != '\n') fputc(' ', fp);
 
-    // Avoir l'index de fin de ligne
-    while((c = fgetc(fp)) != EOF && c != '\n'){
-        idx_fin_ligne++;
-    }
-    idx_fin_ligne++;
-
-    int taille = idx_fin_ligne - idx_debut_ligne + 1;
-    fwrite("", taille, 1, fp);
     printf("Nom supprimé avec succès.\n");
 
     //Débloquer fichier

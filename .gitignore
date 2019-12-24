@@ -6,3 +6,4 @@ resultat.txt
 CMakeLists.txt
 cmake-build-debug/*
 push.sh
+*.out
