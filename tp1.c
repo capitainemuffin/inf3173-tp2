@@ -241,7 +241,60 @@ void modifier_nom(FILE* fp) {
 * Verrouille le fichier en entier.
 **/
 void supprimer_nom(FILE* fp) {
+
     int fd = fileno(fp);
+    int ligne = 0;
+    int choix = 0;
+    char line[256];
+    char c;
+    int idx_fin_ligne = 0;
+    int idx_debut_ligne = 0;
+
+    //bloquer le fichier
+    fseek(fp,0, SEEK_END);
+    int taille_fichier = ftell(fp);
+    rewind(fp);
+    if (lockf(fd, F_LOCK, taille_fichier) == -1) {
+        perror("Une erreur est survenue lors du blocage du fichier.");
+        exit(-4);
+    }
+
+    //Valider que l'entrée est un chiffre.
+    do{
+        printf("Veuillez entrer le code de philosophe à supprimer\n");
+        fgets(line, sizeof(line), stdin);
+        choix = atoi(line);
+
+        if (choix == 0){
+            printf("Choix invalide !\n");
+        }
+    } while (choix == 0);
+
+    rewind(fp);
+
+    // Arriver au début de la bonne ligne
+    while((c = fgetc(fp)) != EOF && ligne != choix){
+        if(c == '\n') ligne++;
+        idx_fin_ligne++;
+        idx_debut_ligne++;
+    }
+
+    // Avoir l'index de fin de ligne
+    while((c = fgetc(fp)) != EOF && c != '\n'){
+        idx_fin_ligne++;
+    }
+    idx_fin_ligne++;
+
+    int taille = idx_fin_ligne - idx_debut_ligne + 1;
+    fwrite("", taille, 1, fp);
+    printf("Nom supprimé avec succès.\n");
+
+    //Débloquer fichier
+    rewind(fp);
+    if (lockf(fd, F_ULOCK, taille_fichier) == -1) {
+        perror("Une erreur est survenue lors du déblocage du fichier.");
+        exit(-4);
+    }
 
 }
 
