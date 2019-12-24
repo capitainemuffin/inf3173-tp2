@@ -7,10 +7,6 @@
 
 #ifdef _WIN32
 #include <Windows.h>
-#else
-
-#include <unistd.h>
-
 #endif
 
 #define QTE_BAGUETTES_REQUISES_MANGER 2
