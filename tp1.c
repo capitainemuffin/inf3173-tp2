@@ -270,6 +270,7 @@ void supprimer_nom(FILE* fp) {
 
     // Arriver au début de la bonne ligne
     while((c = fgetc(fp)) != EOF && ligne != choix) if(c == '\n') ligne++;
+    fseek(fp,-1,SEEK_CUR);
 
     while(c != EOF && c != '\n'){
         if(c != '\t'){
