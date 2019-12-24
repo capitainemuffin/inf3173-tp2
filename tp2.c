@@ -298,8 +298,8 @@ void modifier_nom_et_action(FILE *fp) {
     int idx_debut_ligne = 0;
     int idx_fin_ligne = 0;
     int taille = 0;
-    char nom[256];
-    char action[256];
+    char nom[64];
+    char action[64];
     char line[256];
     char c;
 
@@ -402,7 +402,7 @@ int main() {
         perror("Erreur lors de l'ouverture du fichier \'resultat.txt\' : ");
         exit(-1);
     }
-    
+
     while (1) {
 
         printf("Choisissez l'une des options suivantes et appuyez sur entrée.\n");

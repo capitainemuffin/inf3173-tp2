@@ -72,7 +72,7 @@ void modifier_nom(FILE *fp) {
     int taille = idx_fin_nom - idx_debut_nom + 1;
 
     if (lockf(fd, F_TLOCK, taille) == -1) {
-        perror("Le champ « nom » est verrouillé, veuillez réessayer plus tard.");
+        perror("Le champ « nom » est verrouillé, veuillez réessayer plus tard : ");
         return;
     }
 
@@ -113,7 +113,7 @@ void supprimer_nom(FILE *fp) {
     int taille_fichier = ftell(fp);
     rewind(fp);
     if (lockf(fd, F_TLOCK, taille_fichier) == -1) {
-        perror("Le fichier « résultat » est verrouillé, veuillez réessayer plus tard.");
+        perror("Le fichier « résultat » est verrouillé, veuillez réessayer plus tard : ");
         return;
     }
 
@@ -150,7 +150,7 @@ void supprimer_nom(FILE *fp) {
     //Débloquer fichier
     rewind(fp);
     if (lockf(fd, F_ULOCK, taille_fichier) == -1) {
-        perror("Une erreur est survenue lors du déblocage du fichier.");
+        perror("Une erreur est survenue lors du déblocage du fichier : ");
         exit(-4);
     }
 
@@ -167,8 +167,8 @@ void modifier_nom_et_action(FILE *fp) {
     int idx_debut_ligne = 0;
     int idx_fin_ligne = 0;
     int taille = 0;
-    char nom[256];
-    char action[256];
+    char nom[64];
+    char action[64];
     char line[256];
     char c;
 
@@ -201,7 +201,7 @@ void modifier_nom_et_action(FILE *fp) {
     // Bloquer la ligne
     fseek(fp, idx_debut_ligne, SEEK_SET);
     if (lockf(fd, F_TLOCK, taille) == -1) {
-        perror("L’enregistrement que vous voulez accéder est verrouillé, veuillez réessayer plus tard.");
+        perror("L’enregistrement que vous voulez accéder est verrouillé, veuillez réessayer plus tard : ");
         return;
     }
 
@@ -220,7 +220,7 @@ void modifier_nom_et_action(FILE *fp) {
     //Débloquer la ligne
     fseek(fp, idx_debut_ligne, SEEK_SET);
     if (lockf(fd, F_ULOCK, taille) == -1) {
-        perror("Une erreur est survenue lors du déblocage de l'enregistrement.");
+        perror("Une erreur est survenue lors du déblocage de l'enregistrement : ");
         exit(-4);
     }
 
