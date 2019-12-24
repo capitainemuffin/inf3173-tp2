@@ -7,10 +7,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#ifdef _WIN32
-#include <Windows.h>
-#endif
-
 #define QTE_BAGUETTES_REQUISES_MANGER 2
 #define QTE_PHILOSOPHES 5
 #define QTE_BAGUETTES 5
@@ -94,12 +90,7 @@ void ecrire_ligne(Philosophe *p) {
 
     pthread_mutex_lock(&mutex);
     code++;
-
-#ifdef _WIN32
-    system("@cls");
-#else
     system("clear");
-#endif
 
     printf("Le dîner des philosophes se déroule ... %d%%\n", code * 2);
     if (p->action == PENSER) {
@@ -211,9 +202,9 @@ void modifier_nom(FILE *fp) {
     fseek(fp, idx_debut_nom, SEEK_SET);
     int taille = idx_fin_nom - idx_debut_nom + 1;
 
-    if (lockf(fd, F_LOCK, taille) == -1) {
-        perror("Une erreur est survenue lors du blocage du champ nom.");
-        exit(-4);
+    if (lockf(fd, F_TLOCK, taille) == -1) {
+        perror("Le champ « nom » est verrouillé, veuillez réessayer plus tard : ");
+        return;
     }
 
     printf("Veuillez entrer le nouveau nom du philosophe.\n");
@@ -231,7 +222,7 @@ void modifier_nom(FILE *fp) {
     // Débloquer le champ nom
     fseek(fp, idx_debut_nom, SEEK_SET);
     if (lockf(fd, F_ULOCK, taille) == -1) {
-        perror("Une erreur est survenue lors du déblocage du champ nom.");
+        perror("Une erreur est survenue lors du déblocage du champ nom : ");
         exit(-5);
     }
 }
@@ -252,9 +243,9 @@ void supprimer_nom(FILE *fp) {
     fseek(fp, 0, SEEK_END);
     int taille_fichier = ftell(fp);
     rewind(fp);
-    if (lockf(fd, F_LOCK, taille_fichier) == -1) {
-        perror("Une erreur est survenue lors du blocage du fichier.");
-        exit(-4);
+    if (lockf(fd, F_TLOCK, taille_fichier) == -1) {
+        perror("Le fichier « résultat » est verrouillé, veuillez réessayer plus tard : ");
+        return;
     }
 
     //Valider que l'entrée est un chiffre.
@@ -274,6 +265,7 @@ void supprimer_nom(FILE *fp) {
     while ((c = fgetc(fp)) != EOF && ligne != choix) if (c == '\n') ligne++;
     fseek(fp, -1, SEEK_CUR);
 
+    // Remplacer le texte par des espaces
     while (c != EOF && c != '\n') {
         if (c != '\t') {
             fputc(' ', fp);
@@ -289,7 +281,7 @@ void supprimer_nom(FILE *fp) {
     //Débloquer fichier
     rewind(fp);
     if (lockf(fd, F_ULOCK, taille_fichier) == -1) {
-        perror("Une erreur est survenue lors du déblocage du fichier.");
+        perror("Une erreur est survenue lors du déblocage du fichier : ");
         exit(-4);
     }
 
@@ -301,6 +293,67 @@ void supprimer_nom(FILE *fp) {
 **/
 void modifier_nom_et_action(FILE *fp) {
     int fd = fileno(fp);
+    int ligne = 0;
+    int choix = 0;
+    int idx_debut_ligne = 0;
+    int idx_fin_ligne = 0;
+    int taille = 0;
+    char nom[256];
+    char action[256];
+    char line[256];
+    char c;
+
+    //Valider que l'entrée est un chiffre.
+    do {
+        printf("Veuillez entrer le code de philosophe à modifier\n");
+        fgets(line, sizeof(line), stdin);
+        strtok(action, "\n");
+
+        choix = atoi(line);
+
+        if (choix == 0) {
+            printf("Choix invalide !\n");
+        }
+    } while (choix == 0);
+
+    rewind(fp);
+
+    // Arriver au début de la bonne ligne
+    while ((c = fgetc(fp)) != EOF && ligne != choix) if (c == '\n') ligne++;
+    fseek(fp, -1, SEEK_CUR);
+
+    idx_debut_ligne = ftell(fp);
+    while(c != '\n') c = fgetc(fp);
+    fseek(fp, -1, SEEK_CUR);
+
+    idx_fin_ligne = ftell(fp);
+    taille = idx_fin_ligne - idx_debut_ligne;
+
+    // Bloquer la ligne
+    fseek(fp, idx_debut_ligne, SEEK_SET);
+    if (lockf(fd, F_TLOCK, taille) == -1) {
+        perror("L’enregistrement que vous voulez accéder est verrouillé, veuillez réessayer plus tard : ");
+        return;
+    }
+
+    printf("Veuillez entrer le nouveau nom du philosophe.\n");
+    fgets(nom, sizeof(nom), stdin);
+    strtok(nom, "\n");
+
+    printf("Veuillez entrer la nouvelle action du philosophe.\n");
+    fgets(action, sizeof(action), stdin);
+    strtok(action, "\n");
+
+    sprintf(line, "%d\t%s\t%s\n", choix, nom, action);
+    fwrite(line, taille, 1, fp);
+    printf("Nom et action modifiées avec succès.\n");
+
+    //Débloquer la ligne
+    fseek(fp, idx_debut_ligne, SEEK_SET);
+    if (lockf(fd, F_ULOCK, taille) == -1) {
+        perror("Une erreur est survenue lors du déblocage de l'enregistrement : ");
+        exit(-4);
+    }
 
 }
 
@@ -311,7 +364,7 @@ int main() {
     int choix = -1;
 
     if (fp == NULL) {
-        perror("Error opening th file");
+        perror("Erreur lors de la création du fichier \'resultat.txt\' : ");
         exit(-3);
     }
 
@@ -328,7 +381,7 @@ int main() {
 
         if (pthread_create(&threads[i], NULL, &faire_une_action,
                            philosophes[i]) != 0) {
-            perror("Une erreur est survenue à l'ouverture de thread.");
+            perror("Une erreur est survenue à l'ouverture de thread : ");
             exit(-1);
         }
     }
@@ -338,13 +391,18 @@ int main() {
     for (int i = 0; i < QTE_PHILOSOPHES; i++) {
 
         if (pthread_join(threads[i], NULL) != 0) {
-            perror("Une erreur est survenue à l'attente de terminaison du thread.");
+            perror("Une erreur est survenue à l'attente de terminaison du thread : ");
             exit(-2);
         }
 
         freePhilosophe(philosophes[i]);
     }
-
+    fclose(fp);
+    if((fp = fopen("resultat.txt", "rb+")) == NULL){
+        perror("Erreur lors de l'ouverture du fichier \'resultat.txt\' : ");
+        exit(-1);
+    }
+    
     while (1) {
 
         printf("Choisissez l'une des options suivantes et appuyez sur entrée.\n");

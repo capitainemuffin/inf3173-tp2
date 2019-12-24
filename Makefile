@@ -1,13 +1,14 @@
-options=-Wall -pedantic -std=c11 -lpthread -D_POSIX_SOURCE
+options=-Wall -pedantic -std=c11 -D_POSIX_SOURCE
+
 
 .PHONY : clean push
 
-default : tp1 valider 
+default : tp2 valider 
 
-tp1 : tp1.o
-	gcc -o $@ $< $(options)
+tp2 : tp2.o
+	gcc -o $@ $< $(options) -lpthread 
 
-tp1.o : tp1.c 
+tp2.o : tp2.c 
 	gcc -c -o $@ $< $(options)
 
 valider : valider.o
@@ -18,8 +19,10 @@ valider.o : valider.c
 
 clean : 
 	rm -fr *.o
-	rm -fr tp1 
+	rm -fr *.out
+	rm -fr tp2
 	rm -fr valider
+	rm -fr resultat.txt
 
 push :
 	make clean
