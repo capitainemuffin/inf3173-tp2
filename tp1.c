@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -103,9 +104,9 @@ void ecrire_ligne(Philosophe *p) {
 
     printf("Le dîner des philosophes se déroule ... %d%%\n", code * 2);
     if (p->action == PENSER) {
-        fprintf(p->fp, "%d 	Philosophe %d 	pense\n", code, p->numero);
+        fprintf(p->fp, "%d\tPhilosophe %d\tpense\n", code, p->numero);
     } else {
-        fprintf(p->fp, "%d 	Philosophe %d 	mange\n", code, p->numero);
+        fprintf(p->fp, "%d\tPhilosophe %d\tmange\n", code, p->numero);
     }
     pthread_cond_signal(&condition_var);
     pthread_mutex_unlock(&mutex);
@@ -168,16 +169,70 @@ void consulter_resultat(FILE *fp) {
 void modifier_nom(FILE* fp) {
 
     int fd = fileno(fp);
+    int ligne = 0;
+    int idx_debut_nom = 0;
+    int idx_fin_nom = 0;
+    int choix = 0;
+    char line[256];
+    char c;
 
-    // acquire exclusive lock for bytes in range [10; 15)
-    // F_LOCK specifies blocking mode
-    if (lockf(fd, F_LOCK, 5) == -1) {
-        exit(1);
+    //Valider que l'entrée est un chiffre.
+    do{
+        printf("Veuillez entrer le code de philosophe à modifier\n");
+        fgets(line, sizeof(line), stdin);
+        choix = atoi(line);
+
+        if (choix == 0){
+            printf("Choix invalide !\n");
+        }
+    } while (choix == 0);
+
+    rewind(fp);
+
+    // Arriver à la bonne ligne
+    while((c = fgetc(fp)) != EOF && ligne != choix){
+        idx_debut_nom++;
+        idx_fin_nom++;
+        if(c == '\n') ligne++;
+    }
+    idx_debut_nom++;
+
+    // Avoir l'index du début du nom
+    while((c = fgetc(fp)) != EOF && c != '\t'){
+        idx_debut_nom++;
+        idx_fin_nom++;
+    }
+    idx_debut_nom++;
+
+    // Avoir l'index de fin du nom
+    while((c = fgetc(fp)) != EOF && c != '\t') idx_fin_nom++;
+    idx_fin_nom++;
+
+    //Bloquer le champ nom
+    fseek(fp, idx_debut_nom, SEEK_SET);
+    int taille = idx_fin_nom - idx_debut_nom + 1;
+
+    if (lockf(fd, F_LOCK, taille) == -1) {
+        perror("Une erreur est survenue lors du blocage du champ nom.");
+        exit(-4);
     }
 
-    // release lock for bytes in range [10; 15)
-    if (lockf(fd, F_ULOCK, 5) == -1) {
-        exit(1);
+    printf("Veuillez entrer le nouveau nom du philosophe.\n");
+    fgets(line, sizeof(line), stdin);
+    strtok(line, "\n");
+
+    if(taille < strlen(line)){
+        printf("Désolé, la taille maximale (%d) attribuable pour le nom est dépassée (%lu).\n", taille, strlen(line));
+    } else {
+        fwrite(line, taille, 1, fp);
+        printf("Nom modifié avec succès.\n");
+    }
+
+    // Débloquer le champ nom
+    fseek(fp, idx_debut_nom, SEEK_SET);
+    if (lockf(fd, F_ULOCK, taille) == -1) {
+        perror("Une erreur est survenue lors du déblocage du champ nom.");
+        exit(-5);
     }
 }
 
@@ -202,7 +257,7 @@ void modifier_nom_et_action(FILE* fp) {
 int main() {
 
     // Créer le fichier
-    FILE *fp = fopen("resultat.txt", "w+");
+    FILE *fp = fopen("resultat.txt", "wb+");
     int choix = -1;
 
     if (fp == NULL) {
@@ -211,14 +266,14 @@ int main() {
     }
 
     // L'en-tête du fichier
-    fprintf(fp, "Code 	Nom 	 	Action\n");
+    fprintf(fp, "Code\tNom\t\tAction\n");
 
     pthread_t threads[QTE_PHILOSOPHES];
     Philosophe *philosophes[QTE_PHILOSOPHES];
 
     for (int i = 0; i < QTE_PHILOSOPHES; i++) {
 
-        Philosophe *p = initPhilosophe(i + 1, fp);
+        Philosophe *p = initPhilosophe(i, fp);
         philosophes[i] = p;
 
         if (pthread_create(&threads[i], NULL, &faire_une_action,
@@ -228,6 +283,7 @@ int main() {
         }
     }
 
+    //Attendre que tous les threads se terminent et libérer les espaces mémoires des philosophes
     for (int i = 0; i < QTE_PHILOSOPHES; i++) {
 
         if (pthread_join(threads[i], NULL) != 0) {
@@ -262,7 +318,6 @@ int main() {
                 supprimer_nom(fp);
                 break;
             case 4 :
-                modifier_nom(fp);
                 modifier_nom_et_action(fp);
                 break;
             case 5 :
