@@ -1,4 +1,4 @@
-options=-Wall -pedantic -std=c11 -lpthread
+options=-Wall -pedantic -std=c11 -lpthread -D_POSIX_SOURCE
 
 .PHONY : clean push
 
