@@ -22,7 +22,8 @@
 #define QTE_PENSER_MAX 5
 
 /**
-* Le temps maximum et minimum en secondes qu'un philosophe peut prendre pour une action
+* Le temps maximum et minimum en secondes
+* qu'un philosophe peut prendre pour une action
 **/
 #define TEMPS_MAX 3
 #define TEMPS_MIN 1
@@ -164,7 +165,7 @@ void consulter_resultat(FILE *fp) {
 * Demande le code de philosophe dont on veut modifier son nom.
 * Verouille le champ "nom" qui est associé à ce code.
 **/
-void modifier_nom(FILE* fp) {
+void modifier_nom(FILE *fp) {
 
     int fd = fileno(fp);
     int ligne = 0;
@@ -175,12 +176,12 @@ void modifier_nom(FILE* fp) {
     char c;
 
     //Valider que l'entrée est un chiffre.
-    do{
+    do {
         printf("Veuillez entrer le code de philosophe à modifier\n");
         fgets(line, sizeof(line), stdin);
         choix = atoi(line);
 
-        if (choix == 0){
+        if (choix == 0) {
             printf("Choix invalide !\n");
         }
     } while (choix == 0);
@@ -188,22 +189,22 @@ void modifier_nom(FILE* fp) {
     rewind(fp);
 
     // Arriver à la bonne ligne
-    while((c = fgetc(fp)) != EOF && ligne != choix){
+    while ((c = fgetc(fp)) != EOF && ligne != choix) {
         idx_debut_nom++;
         idx_fin_nom++;
-        if(c == '\n') ligne++;
+        if (c == '\n') ligne++;
     }
     idx_debut_nom++;
 
     // Avoir l'index du début du nom
-    while((c = fgetc(fp)) != EOF && c != '\t'){
+    while ((c = fgetc(fp)) != EOF && c != '\t') {
         idx_debut_nom++;
         idx_fin_nom++;
     }
     idx_debut_nom++;
 
     // Avoir l'index de fin du nom
-    while((c = fgetc(fp)) != EOF && c != '\t') idx_fin_nom++;
+    while ((c = fgetc(fp)) != EOF && c != '\t') idx_fin_nom++;
     idx_fin_nom++;
 
     //Bloquer le champ nom
@@ -219,8 +220,9 @@ void modifier_nom(FILE* fp) {
     fgets(line, sizeof(line), stdin);
     strtok(line, "\n");
 
-    if(taille < strlen(line)){
-        printf("Désolé, la taille maximale (%d) attribuable pour le nom est dépassée (%lu).\n", taille, strlen(line));
+    if (taille < strlen(line)) {
+        printf("Désolé, la taille maximale (%d) pour le nom est dépassée (%lu).\n",
+               taille, strlen(line));
     } else {
         fwrite(line, taille, 1, fp);
         printf("Nom modifié avec succès.\n");
@@ -238,7 +240,7 @@ void modifier_nom(FILE* fp) {
 * Supprimer le nom d’un philosophe. 
 * Verrouille le fichier en entier.
 **/
-void supprimer_nom(FILE* fp) {
+void supprimer_nom(FILE *fp) {
 
     int fd = fileno(fp);
     int ligne = 0;
@@ -247,7 +249,7 @@ void supprimer_nom(FILE* fp) {
     char c;
 
     //bloquer le fichier
-    fseek(fp,0, SEEK_END);
+    fseek(fp, 0, SEEK_END);
     int taille_fichier = ftell(fp);
     rewind(fp);
     if (lockf(fd, F_LOCK, taille_fichier) == -1) {
@@ -256,12 +258,12 @@ void supprimer_nom(FILE* fp) {
     }
 
     //Valider que l'entrée est un chiffre.
-    do{
+    do {
         printf("Veuillez entrer le code de philosophe à supprimer\n");
         fgets(line, sizeof(line), stdin);
         choix = atoi(line);
 
-        if (choix == 0){
+        if (choix == 0) {
             printf("Choix invalide !\n");
         }
     } while (choix == 0);
@@ -269,17 +271,17 @@ void supprimer_nom(FILE* fp) {
     rewind(fp);
 
     // Arriver au début de la bonne ligne
-    while((c = fgetc(fp)) != EOF && ligne != choix) if(c == '\n') ligne++;
-    fseek(fp,-1,SEEK_CUR);
+    while ((c = fgetc(fp)) != EOF && ligne != choix) if (c == '\n') ligne++;
+    fseek(fp, -1, SEEK_CUR);
 
-    while(c != EOF && c != '\n'){
-        if(c != '\t'){
+    while (c != EOF && c != '\n') {
+        if (c != '\t') {
             fputc(' ', fp);
         } else {
             fputc('\t', fp);
         }
         c = fgetc(fp);
-        fseek(fp,-1,SEEK_CUR);
+        fseek(fp, -1, SEEK_CUR);
     }
 
     printf("Nom supprimé avec succès.\n");
@@ -297,7 +299,7 @@ void supprimer_nom(FILE* fp) {
 * Demande le code du philosophe dont on veut modifier l'action.
 * Verouille l’enregistrement (la ligne) qui est associée à ce code.
 **/
-void modifier_nom_et_action(FILE* fp) {
+void modifier_nom_et_action(FILE *fp) {
     int fd = fileno(fp);
 
 }
@@ -331,7 +333,8 @@ int main() {
         }
     }
 
-    //Attendre que tous les threads se terminent et libérer les espaces mémoires des philosophes
+    //Attendre que tous les threads se terminent
+    // et libérer les espaces mémoires des philosophes
     for (int i = 0; i < QTE_PHILOSOPHES; i++) {
 
         if (pthread_join(threads[i], NULL) != 0) {
